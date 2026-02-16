@@ -1,0 +1,9 @@
+/* Injected as a regular content script CSS — styles the host element only.
+   All internal styles are in the Shadow DOM (see content.js). */
+#meet-recorder-host {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 999999;
+  font-family: 'Google Sans', Roboto, Arial, sans-serif;
+}

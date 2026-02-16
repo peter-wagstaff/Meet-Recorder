@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: 'Google Sans', Roboto, Arial, sans-serif;
+      max-width: 400px;
+      margin: 60px auto;
+      text-align: center;
+      color: #333;
+    }
+    h2 { font-size: 18px; margin-bottom: 8px; }
+    p { font-size: 14px; color: #666; margin-bottom: 24px; }
+    button {
+      background: #ea4335;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    button:hover { background: #d33426; }
+    .success { color: #1e8e3e; }
+    .error { color: #ea4335; }
+  </style>
+</head>
+<body>
+  <h2>Meet Recorder</h2>
+  <p>Microphone access is needed to include your voice in recordings.</p>
+  <button id="grant">Grant Microphone Access</button>
+  <p id="status"></p>
+  <script src="permissions.js"></script>
+</body>
+</html>

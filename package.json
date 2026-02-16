@@ -1,0 +1,19 @@
+{
+  "name": "meet-recorder",
+  "version": "1.0.0",
+  "description": "Chrome/Brave extension that records Google Meet audio as MP3",
+  "scripts": {
+    "build": "node build.js",
+    "package": "npm run build && node package.js"
+  },
+  "keywords": ["chrome-extension", "google-meet", "audio-recorder", "mp3"],
+  "author": "Peter Wagstaff",
+  "license": "MIT",
+  "dependencies": {
+    "@breezystack/lamejs": "^1.2.7"
+  },
+  "devDependencies": {
+    "canvas": "^3.2.1",
+    "esbuild": "^0.27.3"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "manifest_version": 3,
+  "name": "Meet Recorder",
+  "version": "1.0.0",
+  "description": "Record Google Meet audio as MP3",
+  "permissions": [
+    "tabCapture",
+    "activeTab",
+    "offscreen",
+    "downloads",
+    "storage",
+    "identity"
+  ],
+  "oauth2": {
+    "client_id": "946764655751-38aqr5okjg7dkn1k9c0241fhgh271m7b.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/drive.metadata.readonly"
+    ]
+  },
+  "options_page": "src/options/options.html",
+  "host_permissions": [
+    "https://meet.google.com/*"
+  ],
+  "background": {
+    "service_worker": "dist/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["dist/content.js"],
+      "css": ["src/content/recorder-ui.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/from_toolbar.png"],
+      "matches": ["https://meet.google.com/*"]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

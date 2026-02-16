@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Google Sans', Roboto, Arial, sans-serif;
+      max-width: 520px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #333;
+      font-size: 14px;
+    }
+    h1 { font-size: 22px; margin-bottom: 24px; }
+    h2 { font-size: 16px; margin: 24px 0 12px; }
+    .section { margin-bottom: 24px; }
+    label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; }
+    input[type="radio"] { margin: 0; }
+    input[type="text"] {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      width: 200px;
+    }
+    .drive-settings {
+      margin-top: 12px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      display: none;
+    }
+    .drive-settings.visible { display: block; }
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-primary { background: #1a73e8; color: #fff; }
+    .btn-primary:hover { background: #1557b0; }
+    .btn-secondary { background: #e8eaed; color: #333; }
+    .btn-secondary:hover { background: #d2d5d9; }
+    .btn-danger { background: #ea4335; color: #fff; }
+    .btn-danger:hover { background: #d33426; }
+    .signed-in { display: none; }
+    .signed-in.visible { display: block; }
+    .sign-in-section { margin-bottom: 16px; }
+    .selected-folder {
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: #e8f0fe;
+      border-radius: 4px;
+      display: none;
+    }
+    .selected-folder.visible { display: flex; align-items: center; gap: 8px; }
+    .folder-tree {
+      margin-top: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      display: none;
+    }
+    .folder-tree.visible { display: block; }
+    .folder-item {
+      padding: 6px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .folder-item:hover { background: #f1f3f4; }
+    .folder-item.selected { background: #e8f0fe; }
+    .folder-children { padding-left: 20px; }
+    .folder-toggle {
+      width: 16px;
+      font-size: 10px;
+      text-align: center;
+      color: #666;
+      flex-shrink: 0;
+    }
+    .drive-header {
+      padding: 8px 12px;
+      font-weight: 500;
+      background: #f1f3f4;
+      border-bottom: 1px solid #ddd;
+    }
+    .drive-header:hover { background: #e8eaed; }
+    .drive-header.selected { background: #e8f0fe; }
+    .status-msg {
+      font-size: 12px;
+      margin-top: 8px;
+      color: #1a73e8;
+    }
+    .error-msg {
+      font-size: 12px;
+      margin-top: 8px;
+      color: #ea4335;
+    }
+    .subfolder-row { display: flex; align-items: center; gap: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Meet Recorder Settings</h1>
+  <p style="color:#666; margin-top:-16px; margin-bottom:24px; font-size:13px;">
+    Recordings capture all speakers and your microphone as a single MP3. Choose where recordings are saved below, either a local Downloads subfolder or a Google Drive folder.
+  </p>
+
+  <div class="section">
+    <h2>Local Download Folder</h2>
+    <div class="subfolder-row">
+      <span>Downloads /</span>
+      <input type="text" id="subfolder" value="Meet Recordings" placeholder="Meet Recordings" />
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Save Destination</h2>
+    <label><input type="radio" name="destination" value="local" checked /> Local download</label>
+    <label><input type="radio" name="destination" value="drive" /> Google Drive</label>
+
+    <div class="drive-settings" id="drive-settings">
+      <div class="sign-in-section" id="sign-in-section">
+        <button class="btn-primary" id="sign-in-btn">Sign in with Google</button>
+        <div id="scope-choice" style="display:none; margin-top:12px;">
+          <p style="color:#555; font-size:13px; margin:0 0 8px;">
+            To browse and save to Shared Drives, Meet Recorder needs read-only
+            access to your Google Drive file list. Without this, you can save
+            to My Drive folders only.
+          </p>
+          <label style="margin-bottom:10px;"><input type="checkbox" id="shared-drives-check"> Enable Shared Drives</label>
+          <div><button class="btn-primary" id="continue-sign-in">Continue with sign-in</button></div>
+        </div>
+      </div>
+      <div class="error-msg" id="error-msg"></div>
+      <div class="signed-in" id="signed-in">
+        <button class="btn-secondary" id="pick-folder-btn">Choose folder</button>
+        <button class="btn-danger" id="sign-out-btn" style="margin-left:8px;">Sign out</button>
+        <div class="selected-folder" id="selected-folder">
+          <span>&#128193;</span>
+          <span id="folder-name"></span>
+        </div>
+        <div class="folder-tree" id="folder-tree"></div>
+        <div class="status-msg" id="status-msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" style="display:flex; align-items:center; gap:12px;">
+    <button class="btn-primary" id="save-btn">Save</button>
+    <span class="status-msg" id="saved-msg"></span>
+  </div>
+
+  <script src="/dist/options.js"></script>
+</body>
+</html>
