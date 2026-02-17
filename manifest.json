@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Meet Recorder",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtyS6YWT7zlHTeNVWO+/u3LO4GwMCa1Ch8sLSu/jk/mZyqXAp4B75eif3R5HpvBwcaBOztg2V9/Z6PDApguB/ydSh8Grxqvhrbpd3eLcQwS1Oa0tVplFE58Jyw/N2EcB5K7XA+oWEVaS5EYE2hQ1QicZC3o8UsyahDY8YVm6fBtgWhyjYF28mAKVoM2CQIoF5SfRvT/9hQ/JVSVv8Mlhd7YlSVTfsbEAAjfkbk7+fjGDX7DfLlxwIxZSJFp/e7ugL5ubOV9OANnh3wPqH0Zv1OQIxfJRiGX0SOvge/s7d73biHrpyvVpphNImWkK79e1tdVN9gF3zlvN3Usmnfnm7xwIDAQAB",
   "version": "1.0.0",
   "description": "Record Google Meet audio as MP3",
   "permissions": [
