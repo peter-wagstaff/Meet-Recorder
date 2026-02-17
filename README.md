@@ -83,6 +83,12 @@ package.js                      # Zip packager for Chrome Web Store
 - First recording on a tab requires clicking the toolbar icon (`tabCapture` needs a user gesture)
 - Firefox is not supported (no `tabCapture` API)
 
+## Google Drive Sign-In (Temporarily Restricted)
+
+The Google Drive integration requires manual whitelisting while the associated Google Cloud project is awaiting verification. If you want to use Drive, open an issue with your Google account email and I'll add you. Publishing is in progress — once approved, sign-in will work for everyone without whitelisting.
+
+In the meantime, local download works without any Google sign-in.
+
 ## License
 
 MIT
