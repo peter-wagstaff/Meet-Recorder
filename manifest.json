@@ -28,9 +28,15 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://meet.google.com/*"],
-      "js": ["dist/content.js"],
-      "css": ["src/content/recorder-ui.css"],
+      "matches": [
+        "https://meet.google.com/*"
+      ],
+      "js": [
+        "dist/content.js"
+      ],
+      "css": [
+        "src/content/recorder-ui.css"
+      ],
       "run_at": "document_idle"
     }
   ],
@@ -43,8 +49,12 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["images/from_toolbar.png"],
-      "matches": ["https://meet.google.com/*"]
+      "resources": [
+        "images/from_toolbar.png"
+      ],
+      "matches": [
+        "https://meet.google.com/*"
+      ]
     }
   ],
   "icons": {
