@@ -245,7 +245,7 @@
 
     // Set toolbar hint image src (must use runtime URL for content scripts)
     shadow.getElementById("toolbar-img").src =
-      chrome.runtime.getURL("icons/from_toolbar.png");
+      chrome.runtime.getURL("images/from_toolbar.png");
 
     // Prevent keyboard events from reaching Google Meet's shortcut handlers
     ["keydown", "keyup", "keypress"].forEach((eventType) => {

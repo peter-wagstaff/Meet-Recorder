@@ -9,7 +9,7 @@ const outfile = `meet-recorder-v${version}.zip`;
 const includes = [
   "manifest.json",
   "dist/",
-  "icons/",
+  "images/",
   "src/content/recorder-ui.css",
   "src/offscreen/offscreen.html",
   "src/offscreen/pcm-processor.js",
