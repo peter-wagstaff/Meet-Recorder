@@ -226,8 +226,11 @@ export async function uploadFile(token, filename, blob, folderId, driveId = null
     body: body,
   });
 
-  // Retry once with a fresh token if expired
-  if (res.status === 401) {
+  // Retry once with a fresh token on auth-related failures.
+  // Google Drive returns 401 for expired tokens, but can also return 404
+  // when the token lacks access to the parent folder (e.g. after re-auth
+  // switches from Chrome identity to web auth flow with a different client).
+  if (res.status === 401 || res.status === 403 || res.status === 404) {
     await removeCachedToken(token);
     const newToken = await getAuthToken(true);
     res = await fetch(uploadUrl, {

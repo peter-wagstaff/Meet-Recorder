@@ -246,13 +246,33 @@ async function handleRecordingComplete(data) {
     if (stored.saveDestination === "drive" && stored.driveFolder) {
       // Upload to Google Drive — need the actual blob
       const blob = await retrieveBlob();
-      const token = await getAuthToken(true);
-      await uploadFile(token, filename, blob, stored.driveFolder.id, stored.driveFolder.driveId);
+      try {
+        const token = await getAuthToken(true);
+        await uploadFile(token, filename, blob, stored.driveFolder.id, stored.driveFolder.driveId);
+        await deleteStoredBlob();
 
-      if (recordingTabId) {
-        chrome.tabs.sendMessage(recordingTabId, { type: "download-started" });
+        if (recordingTabId) {
+          chrome.tabs.sendMessage(recordingTabId, { type: "download-started" });
+        }
+        closeOffscreenDocument();
+      } catch (driveErr) {
+        // Drive upload failed — fall back to local download so recording isn't lost
+        console.warn("Drive upload failed, falling back to local download:", driveErr.message);
+        const blobUrl = URL.createObjectURL(blob);
+        const subfolder = stored.subfolder || "Meet Recordings";
+        const filepath = subfolder ? `${subfolder}/${filename}` : filename;
+        const downloadId = await chrome.downloads.download({
+          url: blobUrl,
+          filename: filepath,
+          saveAs: false,
+        });
+        await deleteStoredBlob();
+
+        if (recordingTabId) {
+          chrome.tabs.sendMessage(recordingTabId, { type: "download-started" });
+        }
+        waitForDownloadThenClose(downloadId);
       }
-      closeOffscreenDocument();
     } else {
       // Local download — use blob URL from offscreen document directly
       // (avoids base64 conversion that could OOM on large recordings)
@@ -311,12 +331,10 @@ function retrieveBlob() {
     };
     request.onsuccess = () => {
       const db = request.result;
-      const tx = db.transaction("recordings", "readwrite");
+      const tx = db.transaction("recordings", "readonly");
       const store = tx.objectStore("recordings");
       const get = store.get("latest");
       get.onsuccess = () => {
-        // Clean up after retrieval
-        store.delete("latest");
         db.close();
         if (get.result) {
           resolve(get.result);
@@ -327,6 +345,23 @@ function retrieveBlob() {
       get.onerror = () => { db.close(); reject(get.error); };
     };
     request.onerror = () => reject(request.error);
+  });
+}
+
+function deleteStoredBlob() {
+  return new Promise((resolve) => {
+    const request = indexedDB.open("meet-recorder", 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore("recordings");
+    };
+    request.onsuccess = () => {
+      const db = request.result;
+      const tx = db.transaction("recordings", "readwrite");
+      tx.objectStore("recordings").delete("latest");
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); resolve(); };
+    };
+    request.onerror = () => resolve();
   });
 }
 

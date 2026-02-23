@@ -8,6 +8,7 @@ let mp3Encoder = null;
 let mp3Chunks = [];
 let tabStream = null;
 let micStream = null;
+let isPaused = false;
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message.target !== "offscreen") return;
@@ -21,11 +22,11 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 
   if (message.type === "pause-recording") {
-    if (audioContext) audioContext.suspend();
+    isPaused = true;
   }
 
   if (message.type === "resume-recording") {
-    if (audioContext) audioContext.resume();
+    isPaused = false;
   }
 
   if (message.type === "discard-recording") {
@@ -82,6 +83,7 @@ async function startRecording(streamId) {
     workletNode = new AudioWorkletNode(audioContext, "pcm-processor");
 
     workletNode.port.onmessage = (e) => {
+      if (isPaused) return;
       const samples = e.data;
 
       // Convert Float32 to Int16
