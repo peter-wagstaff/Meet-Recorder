@@ -9,6 +9,8 @@ let mp3Chunks = [];
 let tabStream = null;
 let micStream = null;
 let isPaused = false;
+let isMicMuted = false;
+let mergeDestination = null;
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message.target !== "offscreen") return;
@@ -27,6 +29,20 @@ chrome.runtime.onMessage.addListener((message) => {
 
   if (message.type === "resume-recording") {
     isPaused = false;
+  }
+
+  if (message.type === "mic-muted") {
+    isMicMuted = true;
+    if (micSource && mergeDestination) {
+      try { micSource.disconnect(mergeDestination); } catch {}
+    }
+  }
+
+  if (message.type === "mic-unmuted") {
+    isMicMuted = false;
+    if (micSource && mergeDestination) {
+      micSource.connect(mergeDestination);
+    }
   }
 
   if (message.type === "discard-recording") {
@@ -50,27 +66,38 @@ async function startRecording(streamId) {
     });
 
     // 2. Get microphone stream
+    // Echo cancellation is disabled because the tab audio passthrough
+    // (tabSource → audioContext.destination) creates a reference loop that
+    // causes Chrome's echo canceller to suppress the user's own voice.
+    // Tab audio is already captured directly, so echo cancellation is unnecessary.
     try {
       micStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
       });
     } catch (micErr) {
       console.warn("Mic access denied, recording tab audio only:", micErr);
+      chrome.runtime.sendMessage({ type: "mic-failed" });
     }
 
     // 3. Set up Web Audio API to merge streams
     audioContext = new AudioContext({ sampleRate: 44100 });
     await audioContext.resume();
-    const destination = audioContext.createMediaStreamDestination();
+    mergeDestination = audioContext.createMediaStreamDestination();
 
     tabSource = audioContext.createMediaStreamSource(tabStream);
-    tabSource.connect(destination);
+    tabSource.connect(mergeDestination);
     // Also play tab audio to speakers so the user can still hear other participants
     tabSource.connect(audioContext.destination);
 
     if (micStream) {
       micSource = audioContext.createMediaStreamSource(micStream);
-      micSource.connect(destination);
+      if (!isMicMuted) {
+        micSource.connect(mergeDestination);
+      }
     }
 
     // 4. Set up real-time MP3 encoding via AudioWorklet
@@ -79,7 +106,7 @@ async function startRecording(streamId) {
     mp3Chunks = [];
 
     await audioContext.audioWorklet.addModule("/src/offscreen/pcm-processor.js");
-    const mergedSource = audioContext.createMediaStreamSource(destination.stream);
+    const mergedSource = audioContext.createMediaStreamSource(mergeDestination.stream);
     workletNode = new AudioWorkletNode(audioContext, "pcm-processor");
 
     workletNode.port.onmessage = (e) => {
@@ -162,6 +189,8 @@ async function stopRecording() {
   mp3Chunks = [];
   tabStream = null;
   micStream = null;
+  isMicMuted = false;
+  mergeDestination = null;
 }
 
 function discardRecording() {
@@ -187,6 +216,8 @@ function discardRecording() {
   mp3Chunks = [];
   tabStream = null;
   micStream = null;
+  isMicMuted = false;
+  mergeDestination = null;
 
   chrome.runtime.sendMessage({ type: "recording-discarded" });
 }

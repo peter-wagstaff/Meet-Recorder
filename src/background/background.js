@@ -153,6 +153,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.runtime.sendMessage({ type: "resume-recording", target: "offscreen" });
   }
 
+  else if (message.type === "mic-muted") {
+    chrome.runtime.sendMessage({ type: "mic-muted", target: "offscreen" });
+  }
+
+  else if (message.type === "mic-unmuted") {
+    chrome.runtime.sendMessage({ type: "mic-unmuted", target: "offscreen" });
+  }
+
   else if (message.type === "discard-recording") {
     chrome.runtime.sendMessage({ type: "discard-recording", target: "offscreen" });
   }
@@ -168,6 +176,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   else if (message.type === "recording-complete") {
     handleRecordingComplete(message.data);
+  }
+
+  else if (message.type === "mic-failed") {
+    // Forward mic failure to content script so user sees a warning
+    if (recordingTabId) {
+      chrome.tabs.sendMessage(recordingTabId, { type: "mic-failed" });
+    }
   }
 
   else if (message.type === "recording-error") {

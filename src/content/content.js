@@ -8,6 +8,8 @@
   let startTime = null;
   let elapsedAtPause = 0;
   let meetDetected = false;
+  let lastMuteState = null;
+  let muteCheckInterval = null;
 
   // --- Meet Detection ---
   // Google Meet shows a bottom bar with call controls when in a meeting.
@@ -19,6 +21,49 @@
     const endCallBtn = document.querySelector('[data-tooltip*="Leave call"]')
       || document.querySelector('[aria-label*="Leave call"]');
     return !!endCallBtn;
+  }
+
+  function isMicMuted() {
+    // Meet has both mic and camera buttons with data-is-muted.
+    // Look for the one whose label mentions "microphone".
+    const muteButtons = document.querySelectorAll('[data-is-muted]');
+    for (const btn of muteButtons) {
+      const label = (btn.getAttribute("aria-label") || "") + (btn.dataset.tooltip || "");
+      if (label.includes("microphone")) return btn.dataset.isMuted === "true";
+    }
+
+    // Fallback: check aria-label / data-tooltip text.
+    // Use includes() to handle suffix variations like "(⌘ + d)".
+    const allBtns = document.querySelectorAll('[aria-label], [data-tooltip]');
+    for (const el of allBtns) {
+      const label = (el.getAttribute("aria-label") || "") + (el.dataset.tooltip || "");
+      if (label.includes("Turn on microphone") || label.includes("Unmute microphone")) return true;
+      if (label.includes("Turn off microphone") || label.includes("Mute microphone")) return false;
+    }
+    return false;
+  }
+
+  function checkMuteState() {
+    const muted = isMicMuted();
+    if (muted !== lastMuteState) {
+      lastMuteState = muted;
+      chrome.runtime.sendMessage({
+        type: muted ? "mic-muted" : "mic-unmuted",
+      });
+    }
+  }
+
+  function startMutePolling() {
+    stopMutePolling();
+    checkMuteState();
+    muteCheckInterval = setInterval(checkMuteState, 500);
+  }
+
+  function stopMutePolling() {
+    if (muteCheckInterval) {
+      clearInterval(muteCheckInterval);
+      muteCheckInterval = null;
+    }
   }
 
   function watchForMeeting() {
@@ -300,6 +345,7 @@
       const recStatus = shadow.getElementById("rec-status");
       if (isPaused) {
         chrome.runtime.sendMessage({ type: "pause-recording" });
+        stopMutePolling();
         pauseBtn.textContent = "Resume";
         redDot.classList.add("paused");
         recStatus.textContent = "Paused";
@@ -311,6 +357,7 @@
         pauseBtn.textContent = "Pause";
         redDot.classList.remove("paused");
         recStatus.textContent = "Recording";
+        startMutePolling();
         // Restart the timer from now
         startTime = Date.now();
         timerInterval = setInterval(updateTimer, 1000);
@@ -334,6 +381,7 @@
         // Confirmed — discard
         isRecording = false;
         isPaused = false;
+        stopMutePolling();
         clearInterval(timerInterval);
         chrome.runtime.sendMessage({ type: "discard-recording" });
       }
@@ -352,6 +400,8 @@
   function startRecording() {
     isRecording = true;
     isPaused = false;
+    lastMuteState = null;
+    startMutePolling();
     shadow.getElementById("pre-record").style.display = "none";
     shadow.getElementById("during-record").style.display = "block";
     shadow.getElementById("dismiss-btn").style.display = "none";
@@ -389,6 +439,8 @@
   function stopRecording() {
     isRecording = false;
     isPaused = false;
+    lastMuteState = null;
+    stopMutePolling();
     clearInterval(timerInterval);
 
     let customFilename = null;
@@ -441,6 +493,7 @@
         }, 2000);
       }
       isRecording = false;
+      stopMutePolling();
     }
 
     if (message.type === "start-from-icon") {
@@ -464,6 +517,8 @@
         startTime = Date.now();
         elapsedAtPause = 0;
         timerInterval = setInterval(updateTimer, 1000);
+        lastMuteState = null;
+        startMutePolling();
         // Sync the current filename to background
         const filenameInput = shadow.getElementById("filename-input");
         if (filenameInput) {
@@ -480,6 +535,7 @@
       // and send the custom filename (if any) to background
       isRecording = false;
       isPaused = false;
+      stopMutePolling();
       clearInterval(timerInterval);
       if (shadow) {
         shadow.getElementById("during-record").style.display = "none";
@@ -497,12 +553,21 @@
     if (message.type === "recording-discarded") {
       isRecording = false;
       isPaused = false;
+      stopMutePolling();
       clearInterval(timerInterval);
       elapsedAtPause = 0;
       if (shadow) {
         shadow.getElementById("during-record").style.display = "none";
         shadow.getElementById("pre-record").style.display = "block";
         shadow.getElementById("dismiss-btn").style.display = "";
+      }
+    }
+
+    if (message.type === "mic-failed") {
+      // Show warning that mic is not being captured
+      if (shadow) {
+        const recStatus = shadow.getElementById("rec-status");
+        if (recStatus) recStatus.textContent = "Recording (no mic)";
       }
     }
 
@@ -515,6 +580,7 @@
       }
       isRecording = false;
       isPaused = false;
+      stopMutePolling();
       clearInterval(timerInterval);
       elapsedAtPause = 0;
       console.error("Meet Recorder error:", message.error);
