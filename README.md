@@ -27,9 +27,9 @@ I made this because the built in save recording feature in Google Meet only allo
    - **Chrome:** `chrome://extensions/`
    - **Brave:** `brave://extensions/`
 
-### Chrome Web Store / Brave Web Store
+### Chrome Web Store (Chrome & Brave)
 
-Coming soon.
+[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/meet-recorder/iechmcohjongbpjhdljhpcjpmbbnfcfc) — works in both Chrome and Brave.
 
 ## Usage
 
@@ -57,6 +57,7 @@ Right-click the extension icon and select "Options", or click the gear icon in t
 npm install
 npm run build      # bundle src/ into dist/
 npm run package    # build + create .zip for Chrome Web Store
+npm run package -- --dev  # keep extension key for sideloading
 ```
 
 The build bundles `src/` into `dist/` using esbuild (minified). After making changes, run `npm run build` and reload the extension from the extensions page (`chrome://extensions/` or `brave://extensions/`).
