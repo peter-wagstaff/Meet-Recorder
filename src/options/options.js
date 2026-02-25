@@ -105,7 +105,14 @@ signOutBtn.addEventListener("click", async () => {
   errorMsg.textContent = "";
 });
 
-pickFolderBtn.addEventListener("click", () => loadFolderTree());
+pickFolderBtn.addEventListener("click", () => {
+  // If the tree is already loaded, just toggle visibility
+  if (folderTree.children.length > 0) {
+    folderTree.classList.toggle("visible");
+    return;
+  }
+  loadFolderTree();
+});
 
 // --- Functions ---
 

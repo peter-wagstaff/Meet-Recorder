@@ -1,5 +1,14 @@
 import { getAuthToken, uploadFile } from "../lib/drive-api.js";
 
+// Swallow "Receiving end does not exist" errors on fire-and-forget messages.
+// This happens when the content script or offscreen document isn't loaded yet.
+function sendMsg(args) {
+  return chrome.runtime.sendMessage(...args).catch(() => {});
+}
+function sendTabMsg(tabId, msg) {
+  return chrome.tabs.sendMessage(tabId, msg).catch(() => {});
+}
+
 let recordingTabId = null;
 let micPermissionGranted = false;
 let pendingFilename = null;
@@ -135,7 +144,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.filename) {
       pendingFilename = message.filename;
     }
-    chrome.runtime.sendMessage({ type: "stop-recording", target: "offscreen" });
+    sendMsg([{ type: "stop-recording", target: "offscreen" }]);
     sendResponse({ success: true });
   }
 
@@ -146,28 +155,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   else if (message.type === "pause-recording") {
-    chrome.runtime.sendMessage({ type: "pause-recording", target: "offscreen" });
+    sendMsg([{ type: "pause-recording", target: "offscreen" }]);
   }
 
   else if (message.type === "resume-recording") {
-    chrome.runtime.sendMessage({ type: "resume-recording", target: "offscreen" });
+    sendMsg([{ type: "resume-recording", target: "offscreen" }]);
   }
 
   else if (message.type === "mic-muted") {
-    chrome.runtime.sendMessage({ type: "mic-muted", target: "offscreen" });
+    sendMsg([{ type: "mic-muted", target: "offscreen" }]);
   }
 
   else if (message.type === "mic-unmuted") {
-    chrome.runtime.sendMessage({ type: "mic-unmuted", target: "offscreen" });
+    sendMsg([{ type: "mic-unmuted", target: "offscreen" }]);
   }
 
   else if (message.type === "discard-recording") {
-    chrome.runtime.sendMessage({ type: "discard-recording", target: "offscreen" });
+    sendMsg([{ type: "discard-recording", target: "offscreen" }]);
   }
 
   else if (message.type === "recording-discarded") {
     if (recordingTabId) {
-      chrome.tabs.sendMessage(recordingTabId, { type: "recording-discarded" });
+      sendTabMsg(recordingTabId, { type: "recording-discarded" });
     }
     setRecordingTabId(null);
     pendingFilename = null;
@@ -181,14 +190,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   else if (message.type === "mic-failed") {
     // Forward mic failure to content script so user sees a warning
     if (recordingTabId) {
-      chrome.tabs.sendMessage(recordingTabId, { type: "mic-failed" });
+      sendTabMsg(recordingTabId, { type: "mic-failed" });
     }
   }
 
   else if (message.type === "recording-error") {
     // Forward error to content script
     if (recordingTabId) {
-      chrome.tabs.sendMessage(recordingTabId, {
+      sendTabMsg(recordingTabId, {
         type: "recording-error",
         error: message.error,
       });
@@ -236,11 +245,11 @@ async function handleStartRecording(tabId) {
   // Only set recordingTabId after tabCapture succeeds
   setRecordingTabId(tabId);
 
-  chrome.runtime.sendMessage({
+  sendMsg([{
     type: "start-recording",
     target: "offscreen",
     data: { streamId },
-  });
+  }]);
 
   return { success: true };
 }
@@ -267,7 +276,7 @@ async function handleRecordingComplete(data) {
         await deleteStoredBlob();
 
         if (recordingTabId) {
-          chrome.tabs.sendMessage(recordingTabId, { type: "download-started" });
+          sendTabMsg(recordingTabId, { type: "download-started" });
         }
         closeOffscreenDocument();
       } catch (driveErr) {
@@ -284,7 +293,7 @@ async function handleRecordingComplete(data) {
         await deleteStoredBlob();
 
         if (recordingTabId) {
-          chrome.tabs.sendMessage(recordingTabId, { type: "download-started" });
+          sendTabMsg(recordingTabId, { type: "download-started" });
         }
         waitForDownloadThenClose(downloadId);
       }
@@ -301,7 +310,7 @@ async function handleRecordingComplete(data) {
       });
 
       if (recordingTabId) {
-        chrome.tabs.sendMessage(recordingTabId, { type: "download-started" });
+        sendTabMsg(recordingTabId, { type: "download-started" });
       }
 
       // Wait for download to complete before closing offscreen doc
@@ -310,7 +319,7 @@ async function handleRecordingComplete(data) {
     }
   } catch (err) {
     if (recordingTabId) {
-      chrome.tabs.sendMessage(recordingTabId, {
+      sendTabMsg(recordingTabId, {
         type: "recording-error",
         error: err.message,
       });
@@ -389,16 +398,16 @@ chrome.action.onClicked.addListener(async (tab) => {
 
   if (recordingTabId) {
     // Currently recording — stop
-    chrome.runtime.sendMessage({ type: "stop-recording", target: "offscreen" });
-    chrome.tabs.sendMessage(recordingTabId, { type: "stop-from-icon" });
+    sendMsg([{ type: "stop-recording", target: "offscreen" }]);
+    sendTabMsg(recordingTabId, { type: "stop-from-icon" });
   } else {
     // Start recording
     try {
       await ensureMicPermission(tab.id);
       await handleStartRecording(tab.id);
-      chrome.tabs.sendMessage(tab.id, { type: "start-from-icon" });
+      sendTabMsg(tab.id, { type: "start-from-icon" });
     } catch (err) {
-      chrome.tabs.sendMessage(tab.id, {
+      sendTabMsg(tab.id, {
         type: "recording-error",
         error: err.message,
       });
