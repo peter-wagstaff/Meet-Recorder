@@ -18,16 +18,24 @@ const includes = [
   "src/permissions/permissions.js",
 ];
 
-// The Chrome Web Store does not allow the "key" field in the manifest.
-// Strip it for packaging, then restore the original after.
-const { key, ...manifestWithoutKey } = manifest;
-writeFileSync("manifest.json", JSON.stringify(manifestWithoutKey, null, 2) + "\n");
+const isDev = process.argv.includes("--dev");
 
-try {
+if (isDev) {
+  // Dev build: keep the key field so sideloaded installs share the same extension ID
   execSync(`rm -f ${outfile}`);
   execSync(`zip -r ${outfile} ${includes.join(" ")}`);
-  console.log(`Packaged: ${outfile}`);
-} finally {
-  // Always restore the original manifest
-  writeFileSync("manifest.json", JSON.stringify(manifest, null, 2) + "\n");
+  console.log(`Packaged (dev): ${outfile}`);
+} else {
+  // Chrome Web Store does not allow the "key" field in the manifest.
+  // Strip it for packaging, then restore the original after.
+  const { key, ...manifestWithoutKey } = manifest;
+  writeFileSync("manifest.json", JSON.stringify(manifestWithoutKey, null, 2) + "\n");
+
+  try {
+    execSync(`rm -f ${outfile}`);
+    execSync(`zip -r ${outfile} ${includes.join(" ")}`);
+    console.log(`Packaged: ${outfile}`);
+  } finally {
+    writeFileSync("manifest.json", JSON.stringify(manifest, null, 2) + "\n");
+  }
 }
